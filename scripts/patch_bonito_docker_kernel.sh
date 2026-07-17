@@ -80,6 +80,10 @@ if symbol_exists CC_STACKPROTECTOR_NONE; then
   scripts/config --file "$DEFCONFIG" --enable CC_STACKPROTECTOR_NONE
   echo "enabled CONFIG_CC_STACKPROTECTOR_NONE"
 fi
+if symbol_exists SHADOW_CALL_STACK; then
+  scripts/config --file "$DEFCONFIG" --disable SHADOW_CALL_STACK
+  echo "disabled CONFIG_SHADOW_CALL_STACK"
+fi
 
 QTAGUID="net/netfilter/xt_qtaguid.c"
 if [[ -f "$QTAGUID" ]]; then
