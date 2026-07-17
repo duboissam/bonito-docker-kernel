@@ -80,6 +80,7 @@ jobs:
           CLANG_TRIPLE: aarch64-linux-gnu-
           CROSS_COMPILE: aarch64-linux-gnu-
           CROSS_COMPILE_ARM32: arm-linux-gnueabi-
+          CROSS_COMPILE_COMPAT: arm-linux-gnueabi-
           KBUILD_BUILD_USER: github-actions
           KBUILD_BUILD_HOST: bonito-docker
         run: |
@@ -92,6 +93,7 @@ jobs:
             OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip \
             LLVM_IAS=1 CLANG_TRIPLE=aarch64-linux-gnu- \
             CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
+            CROSS_COMPILE_COMPAT=arm-linux-gnueabi- \
             KCFLAGS=-Wno-error
 
       - name: Collect outputs
