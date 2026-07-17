@@ -47,8 +47,8 @@ jobs:
             git -C kernel fetch --depth=1 origin "refs/tags/$KERNEL_REF"
             git -C kernel checkout --detach FETCH_HEAD
           else
-            git -C kernel fetch --depth=500 origin lineage-22.2
-            git -C kernel checkout --detach "$KERNEL_REF"
+            git -C kernel fetch --depth=1 origin "$KERNEL_REF"
+            git -C kernel checkout --detach FETCH_HEAD
           fi
 
           git -C kernel rev-parse HEAD | tee kernel-commit.txt
