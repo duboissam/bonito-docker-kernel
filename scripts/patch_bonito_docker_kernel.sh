@@ -131,7 +131,7 @@ import sys
 p = Path(sys.argv[1])
 t = p.read_text()
 old = "  CC_ARM32 := $(CC) $(CLANG_TARGET_ARM32) -no-integrated-as $(CLANG_GCC32_TC) $(CLANG_PREFIX32)"
-new = "  CC_ARM32 := $(CC) --target=arm-linux-gnueabi $(CLANG_TARGET_ARM32) $(CLANG_GCC32_TC) $(CLANG_PREFIX32)"
+new = "  CC_ARM32 := $(CC) --target=arm-linux-gnueabi -B/usr/bin/arm-linux-gnueabi- --gcc-toolchain=/usr $(CLANG_TARGET_ARM32) $(CLANG_GCC32_TC) $(CLANG_PREFIX32)"
 if new in t:
     print("vdso32 clang assembler workaround already present")
 elif old in t:
