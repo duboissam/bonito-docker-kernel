@@ -1,21 +1,22 @@
-# Pixel 3a XL Docker kernel builder
+# Pixel 3 XL Docker kernel builder
 
-This GitHub Actions project clones the LineageOS Pixel 3a/3a XL Linux 4.9 kernel,
-enables Docker/container kernel options, attempts the Android `xt_qtaguid`
-workaround, compiles the kernel, and uploads the output as a workflow artifact.
+This GitHub Actions project clones the LineageOS Pixel 3/3 XL Linux 4.9 kernel
+for the `crosshatch`/`bluecross` family, enables Docker/container kernel
+options, attempts the Android `xt_qtaguid` workaround when that source file is
+present, compiles the kernel, and uploads the output as a workflow artifact.
 
 ## Run it
 
-Before running the full build, run **Actions** -> **Validate bonito Docker kernel
-config**. That workflow only clones the kernel, applies the Docker config/source
+Before running the full build, run **Actions** -> **Validate crosshatch Docker
+kernel config**. That workflow only clones the kernel, applies the Docker config/source
 patches, resolves `.config`, and checks required Docker symbols. It does not
 compile the kernel.
 
 1. Create a new **private** GitHub repository. Do not initialise it with a README.
 2. Upload all files from this folder, preserving `.github/workflows/build-kernel.yml`.
 3. Commit the files to the default branch.
-4. Open **Actions** -> **Validate bonito Docker kernel config** -> **Run workflow**.
-5. Only if validation passes, open **Actions** -> **Build bonito Docker kernel** ->
+4. Open **Actions** -> **Validate crosshatch Docker kernel config** -> **Run workflow**.
+5. Only if validation passes, open **Actions** -> **Build crosshatch Docker kernel** ->
    **Run workflow**.
 6. Leave `kernel_ref` as `lineage-22.2` for the first attempt unless your phone
    is running a different kernel branch or exact commit.
@@ -52,7 +53,7 @@ small source compatibility patch.
 
 ## Current phone config check
 
-The checked `bonito-current-config` is not Docker-ready yet. Required missing or
+The checked phone config was not Docker-ready yet. Required missing or
 disabled features were:
 
 - `CONFIG_IPC_NS`
@@ -65,5 +66,5 @@ disabled features were:
 Run locally with:
 
 ```bash
-bash scripts/check_bonito_docker_config.sh /path/to/bonito-current-config
+bash scripts/check_docker_kernel_config.sh /path/to/crosshatch-current-config
 ```

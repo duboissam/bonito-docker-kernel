@@ -10,7 +10,7 @@ fi
 KERNEL_DIR="$(cd "$KERNEL_DIR" && pwd)"
 cd "$KERNEL_DIR"
 
-DEFCONFIG="arch/arm64/configs/bonito_defconfig"
+DEFCONFIG="arch/arm64/configs/b1c1_defconfig"
 OUT="${OUT:-$KERNEL_DIR/out-docker}"
 
 [[ -f Makefile ]] || { echo "Not a kernel tree"; exit 1; }
@@ -145,7 +145,7 @@ else:
 PY
 fi
 
-make O="$OUT" ARCH=arm64 bonito_defconfig
+make O="$OUT" ARCH=arm64 b1c1_defconfig
 make O="$OUT" ARCH=arm64 olddefconfig
 make O="$OUT" ARCH=arm64 savedefconfig
 cp "$OUT/defconfig" "$DEFCONFIG"
@@ -164,4 +164,4 @@ echo "Patched: $DEFCONFIG"
 echo "Resolved config: $OUT/.config"
 (( fail == 0 )) || exit 1
 
-echo "Next: run ./build_bonito.sh in the kernel tree."
+echo "Next: run ./build_bluecross.sh in the kernel tree."

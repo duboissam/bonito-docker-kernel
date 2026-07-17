@@ -1,4 +1,4 @@
-name: Validate bonito Docker kernel config
+name: Validate crosshatch Docker kernel config
 
 on:
   workflow_dispatch:
@@ -26,7 +26,7 @@ jobs:
             bc bison build-essential ca-certificates curl flex git \
             libelf-dev libssl-dev make python3
 
-      - name: Clone LineageOS bonito kernel
+      - name: Clone LineageOS crosshatch kernel
         run: |
           git clone --depth=1 --branch "${{ inputs.kernel_ref }}" \
             https://github.com/LineageOS/android_kernel_google_msm-4.9.git kernel
@@ -35,9 +35,9 @@ jobs:
       - name: Patch and resolve Docker kernel config
         working-directory: kernel
         run: |
-          chmod +x "$GITHUB_WORKSPACE/scripts/patch_bonito_docker_kernel.sh"
-          "$GITHUB_WORKSPACE/scripts/patch_bonito_docker_kernel.sh" "$GITHUB_WORKSPACE/kernel"
-          bash "$GITHUB_WORKSPACE/scripts/check_bonito_docker_config.sh" out-docker/.config
+          chmod +x "$GITHUB_WORKSPACE/scripts/patch_crosshatch_docker_kernel.sh"
+          "$GITHUB_WORKSPACE/scripts/patch_crosshatch_docker_kernel.sh" "$GITHUB_WORKSPACE/kernel"
+          bash "$GITHUB_WORKSPACE/scripts/check_docker_kernel_config.sh" out-docker/.config
 
       - name: Check source patches landed
         run: |
@@ -54,14 +54,14 @@ jobs:
           mkdir -p artifacts
           cp kernel-commit.txt artifacts/ 2>/dev/null || true
           cp kernel/out-docker/.config artifacts/resolved-kernel-config 2>/dev/null || true
-          cp kernel/arch/arm64/configs/bonito_defconfig artifacts/bonito_defconfig 2>/dev/null || true
+          cp kernel/arch/arm64/configs/b1c1_defconfig artifacts/b1c1_defconfig 2>/dev/null || true
           du -ah artifacts || true
 
       - name: Upload validation artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: bonito-docker-config-validation-${{ github.run_number }}
+          name: crosshatch-docker-config-validation-${{ github.run_number }}
           path: artifacts/
           if-no-files-found: warn
           retention-days: 14

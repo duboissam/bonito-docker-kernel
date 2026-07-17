@@ -1,4 +1,4 @@
-name: Build bonito Docker kernel
+name: Build crosshatch Docker kernel
 
 on:
   workflow_dispatch:
@@ -50,7 +50,7 @@ jobs:
           sudo chmod +x /usr/local/bin/mkdtimg
           mkdtimg help cfg_create
 
-      - name: Clone LineageOS bonito kernel
+      - name: Clone LineageOS crosshatch kernel
         run: |
           git clone --depth=1 --branch "${{ inputs.kernel_ref }}" \
             https://github.com/LineageOS/android_kernel_google_msm-4.9.git kernel
@@ -78,8 +78,8 @@ jobs:
 
       - name: Patch Docker kernel options
         run: |
-          chmod +x scripts/patch_bonito_docker_kernel.sh
-          scripts/patch_bonito_docker_kernel.sh "$GITHUB_WORKSPACE/kernel"
+          chmod +x scripts/patch_crosshatch_docker_kernel.sh
+          scripts/patch_crosshatch_docker_kernel.sh "$GITHUB_WORKSPACE/kernel"
 
       - name: Build kernel
         working-directory: kernel
@@ -99,11 +99,11 @@ jobs:
           CROSS_COMPILE_ARM32: arm-linux-gnueabi-
           CROSS_COMPILE_COMPAT: arm-linux-gnueabi-
           KBUILD_BUILD_USER: github-actions
-          KBUILD_BUILD_HOST: bonito-docker
+          KBUILD_BUILD_HOST: crosshatch-docker
         run: |
           export PATH="$CLANG_DIR:$PATH"
           export KBUILD_BUILD_TIMESTAMP="$(date -u -d @${SOURCE_DATE_EPOCH:-$(date +%s)} '+%a %b %d %T UTC %Y')"
-          make O=out-docker ARCH=arm64 bonito_defconfig
+          make O=out-docker ARCH=arm64 b1c1_defconfig
           make O=out-docker ARCH=arm64 olddefconfig
           make O=out-docker ARCH=arm64 -j"$(nproc)" \
             CC=clang LD=aarch64-linux-gnu-ld.bfd AR=llvm-ar NM=llvm-nm \
@@ -119,7 +119,7 @@ jobs:
           mkdir -p artifacts
           cp kernel-commit.txt artifacts/ 2>/dev/null || true
           cp kernel/out-docker/.config artifacts/resolved-kernel-config 2>/dev/null || true
-          cp kernel/arch/arm64/configs/bonito_defconfig artifacts/bonito_defconfig 2>/dev/null || true
+          cp kernel/arch/arm64/configs/b1c1_defconfig artifacts/b1c1_defconfig 2>/dev/null || true
           cp kernel/out-docker/arch/arm64/boot/Image.lz4-dtb artifacts/ 2>/dev/null || true
           cp kernel/out-docker/arch/arm64/boot/Image.gz-dtb artifacts/ 2>/dev/null || true
           cp kernel/out-docker/arch/arm64/boot/Image artifacts/ 2>/dev/null || true
@@ -132,7 +132,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: bonito-docker-kernel-${{ github.run_number }}
+          name: crosshatch-docker-kernel-${{ github.run_number }}
           path: artifacts/
           if-no-files-found: warn
           retention-days: 14
