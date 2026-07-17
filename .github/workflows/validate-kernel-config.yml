@@ -26,6 +26,11 @@ jobs:
             bc bison build-essential ca-certificates curl flex git \
             libelf-dev libssl-dev make python3
 
+      - name: Install mkdtimg
+        run: |
+          set -euo pipefail
+          scripts/install_mkdtimg.sh /usr/local/bin/mkdtimg
+
       - name: Clone LineageOS crosshatch kernel
         run: |
           git clone --depth=1 --branch "${{ inputs.kernel_ref }}" \
