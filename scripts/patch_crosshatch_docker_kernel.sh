@@ -145,6 +145,12 @@ else:
 PY
 fi
 
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  short_head="$(git rev-parse --short=12 HEAD)"
+  printf '%s\n' "-g${short_head}" > .scmversion
+  echo "Pinned kernel localversion to -g${short_head}"
+fi
+
 make O="$OUT" ARCH=arm64 b1c1_defconfig
 make O="$OUT" ARCH=arm64 olddefconfig
 make O="$OUT" ARCH=arm64 savedefconfig
