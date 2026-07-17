@@ -70,7 +70,7 @@ jobs:
           ARCH: arm64
           SUBARCH: arm64
           CC: clang
-          LD: ld.lld
+          LD: aarch64-linux-gnu-ld.bfd
           AR: llvm-ar
           NM: llvm-nm
           OBJCOPY: llvm-objcopy
@@ -89,7 +89,7 @@ jobs:
           make O=out-docker ARCH=arm64 bonito_defconfig
           make O=out-docker ARCH=arm64 olddefconfig
           make O=out-docker ARCH=arm64 -j"$(nproc)" \
-            CC=clang LD=ld.lld AR=llvm-ar NM=llvm-nm \
+            CC=clang LD=aarch64-linux-gnu-ld.bfd AR=llvm-ar NM=llvm-nm \
             OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip \
             LLVM_IAS=1 CLANG_TRIPLE=aarch64-linux-gnu- \
             CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
