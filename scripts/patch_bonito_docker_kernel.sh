@@ -54,6 +54,16 @@ recommended=(
 for s in "${required[@]}"; do enable "$s"; done
 for s in "${recommended[@]}"; do enable "$s"; done
 
+# This Android 4.9 tree enables Clang LTO by default, but its compiler check
+# expects the obsolete GNU gold linker. LTO is not required for Docker and
+# disabling it makes the kernel build reliably with the modern LLVM toolchain.
+for s in LTO LTO_CLANG THINLTO; do
+  if symbol_exists "$s"; then
+    scripts/config --file "$DEFCONFIG" --disable "$s"
+    echo "disabled CONFIG_$s"
+  fi
+done
+
 QTAGUID="net/netfilter/xt_qtaguid.c"
 if [[ -f "$QTAGUID" ]]; then
 python3 - "$QTAGUID" <<'PY'
