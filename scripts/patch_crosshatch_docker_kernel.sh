@@ -85,12 +85,13 @@ if symbol_exists SHADOW_CALL_STACK; then
   echo "disabled CONFIG_SHADOW_CALL_STACK"
 fi
 
-# The stock LineageOS vendor partition supplies Wi-Fi/audio modules. Enabling
-# Docker options changes symbol CRCs, so keep the kernel from rejecting those
-# existing vendor modules solely because CONFIG_MODVERSIONS CRCs no longer match.
+# Keep module versioning enabled when the tree supports it. Crosshatch loads
+# Wi-Fi/audio from /vendor/lib/modules, and those modules must be rebuilt and
+# installed as a matched set with this kernel. Disabling MODVERSIONS changes the
+# ABI contract and does not make stock vendor modules compatible.
 if symbol_exists MODVERSIONS; then
-  scripts/config --file "$DEFCONFIG" --disable MODVERSIONS
-  echo "disabled CONFIG_MODVERSIONS"
+  scripts/config --file "$DEFCONFIG" --enable MODVERSIONS
+  echo "enabled CONFIG_MODVERSIONS"
 fi
 
 QTAGUID="net/netfilter/xt_qtaguid.c"

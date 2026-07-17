@@ -22,9 +22,10 @@ compile the kernel.
    is running a different kernel branch or exact commit.
 7. After the run finishes, open the run and download the artifact at the bottom.
 
-The artifact should contain a kernel image, `vmlinux`, the resolved `.config`, and
-any generated modules. GitHub workflow artifacts are downloaded from the workflow
-run page.
+The artifact should contain a kernel image, `vmlinux`, the resolved `.config`,
+the raw module archive, and a flattened `vendor-modules.tar.gz` package for the
+phone's `/vendor/lib/modules` directory. GitHub workflow artifacts are
+downloaded from the workflow run page.
 
 ## Important
 
@@ -37,6 +38,31 @@ fastboot boot docker-boot.img
 ```
 
 Do not permanently flash it until temporary booting and ADB both work.
+
+## Vendor modules
+
+Crosshatch uses loadable vendor modules for Wi-Fi and audio. Enabling Docker
+kernel options changes the module version CRCs, so the stock
+`/vendor/lib/modules/*.ko` files can have the same visible `vermagic` string but
+still fail with errors like:
+
+```text
+wlan: disagrees about version of symbol module_layout
+```
+
+Install the matching `vendor-modules` package from the same build artifact as
+the boot image:
+
+```bash
+tar -xzf vendor-modules.tar.gz
+bash scripts/install_crosshatch_vendor_modules.sh vendor-modules
+adb reboot
+```
+
+The install script backs up the existing phone modules under
+`/data/local/tmp/vendor-modules-backup-*` before replacing files. If `adb remount`
+fails, the phone may need verity disabled and a reboot before `/vendor` can be
+updated.
 
 ## Matching your installed kernel
 

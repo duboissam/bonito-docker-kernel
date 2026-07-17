@@ -128,6 +128,11 @@ jobs:
           cp kernel/out-docker/arch/arm64/boot/Image.gz-dtb artifacts/ 2>/dev/null || true
           cp kernel/out-docker/arch/arm64/boot/Image artifacts/ 2>/dev/null || true
           cp kernel/out-docker/vmlinux artifacts/ 2>/dev/null || true
+          if [[ -d kernel/out-docker ]]; then
+            chmod +x scripts/package_crosshatch_vendor_modules.sh
+            scripts/package_crosshatch_vendor_modules.sh kernel/out-docker artifacts/vendor-modules
+            tar -czf artifacts/vendor-modules.tar.gz -C artifacts vendor-modules
+          fi
           find kernel/out-docker -name '*.ko' -print0 2>/dev/null | \
             tar --null -T - -czf artifacts/modules.tar.gz 2>/dev/null || true
           du -ah artifacts || true
