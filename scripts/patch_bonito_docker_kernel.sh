@@ -122,6 +122,29 @@ print("qtaguid workaround applied")
 PY
 fi
 
+VDSO32_MAKEFILE="arch/arm64/kernel/vdso32/Makefile"
+if [[ -f "$VDSO32_MAKEFILE" ]]; then
+python3 - "$VDSO32_MAKEFILE" <<'PY'
+from pathlib import Path
+import sys
+
+p = Path(sys.argv[1])
+t = p.read_text()
+old = "  CC_ARM32 := $(CC) $(CLANG_TARGET_ARM32) -no-integrated-as $(CLANG_GCC32_TC) $(CLANG_PREFIX32)"
+new = "  CC_ARM32 := $(CC) --target=arm-linux-gnueabi $(CLANG_TARGET_ARM32) $(CLANG_GCC32_TC) $(CLANG_PREFIX32)"
+if new in t:
+    print("vdso32 clang assembler workaround already present")
+elif old in t:
+    backup = p.with_suffix(p.suffix + ".docker-backup")
+    if not backup.exists():
+        backup.write_text(t)
+    p.write_text(t.replace(old, new, 1))
+    print("vdso32 clang assembler workaround applied")
+else:
+    print("WARNING: vdso32 Makefile layout not recognised; patch manually")
+PY
+fi
+
 make O="$OUT" ARCH=arm64 bonito_defconfig
 make O="$OUT" ARCH=arm64 olddefconfig
 make O="$OUT" ARCH=arm64 savedefconfig
