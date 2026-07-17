@@ -41,7 +41,11 @@ jobs:
 
       - name: Check source patches landed
         run: |
-          grep -q 'stats = &no_dev_stats;' kernel/net/netfilter/xt_qtaguid.c
+          if [[ -f kernel/net/netfilter/xt_qtaguid.c ]]; then
+            grep -q 'stats = &no_dev_stats;' kernel/net/netfilter/xt_qtaguid.c
+          else
+            echo "kernel/net/netfilter/xt_qtaguid.c not present in this tree; skipping qtaguid workaround check"
+          fi
           grep -q -- '--target=arm-linux-gnueabi' kernel/arch/arm64/kernel/vdso32/Makefile
 
       - name: Collect validation outputs
