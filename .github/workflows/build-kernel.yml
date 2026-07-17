@@ -33,6 +33,15 @@ jobs:
             gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi \
             libelf-dev libssl-dev lld llvm make mkbootimg python3 rsync unzip xz-utils zip
 
+      - name: Install mkdtimg
+        run: |
+          set -euo pipefail
+          curl -fsSL 'https://android.googlesource.com/platform/system/libufdt/+/refs/heads/android10-release/utils/src/mkdtboimg.py?format=TEXT' \
+            | base64 --decode \
+            | sudo tee /usr/local/bin/mkdtimg >/dev/null
+          sudo chmod +x /usr/local/bin/mkdtimg
+          mkdtimg help cfg_create
+
       - name: Clone LineageOS bonito kernel
         run: |
           git clone --depth=1 --branch "${{ inputs.kernel_ref }}" \
