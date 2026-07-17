@@ -85,6 +85,14 @@ if symbol_exists SHADOW_CALL_STACK; then
   echo "disabled CONFIG_SHADOW_CALL_STACK"
 fi
 
+# The stock LineageOS vendor partition supplies Wi-Fi/audio modules. Enabling
+# Docker options changes symbol CRCs, so keep the kernel from rejecting those
+# existing vendor modules solely because CONFIG_MODVERSIONS CRCs no longer match.
+if symbol_exists MODVERSIONS; then
+  scripts/config --file "$DEFCONFIG" --disable MODVERSIONS
+  echo "disabled CONFIG_MODVERSIONS"
+fi
+
 QTAGUID="net/netfilter/xt_qtaguid.c"
 if [[ -f "$QTAGUID" ]]; then
 python3 - "$QTAGUID" <<'PY'
