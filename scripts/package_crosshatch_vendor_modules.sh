@@ -12,6 +12,21 @@ KERNEL_OUT="$(cd "$KERNEL_OUT" && pwd)"
 rm -rf "$DEST"
 mkdir -p "$DEST"
 
+strip_tool="${STRIP_TOOL:-}"
+if [[ -z "$strip_tool" ]]; then
+  for candidate in llvm-strip aarch64-linux-gnu-strip; do
+    if command -v "$candidate" >/dev/null 2>&1; then
+      strip_tool="$candidate"
+      break
+    fi
+  done
+fi
+
+if [[ -z "$strip_tool" ]]; then
+  echo "ERROR: llvm-strip or aarch64-linux-gnu-strip is required to package phone-sized modules" >&2
+  exit 1
+fi
+
 sources=(
   "wlan.ko:drivers/staging/qcacld-3.0/wlan.ko"
   "wcd-dsp-glink.ko:techpack/audio/ipc/wcd-dsp-glink.ko"
@@ -34,6 +49,7 @@ for entry in "${sources[@]}"; do
     exit 1
   fi
   cp "$src" "$DEST/$module"
+  "$strip_tool" --strip-unneeded "$DEST/$module"
 done
 
 cat > "$DEST/modules.dep" <<'EOF'
