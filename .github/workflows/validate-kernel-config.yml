@@ -33,8 +33,24 @@ jobs:
 
       - name: Clone LineageOS crosshatch kernel
         run: |
-          git clone --depth=1 --branch "${{ inputs.kernel_ref }}" \
-            https://github.com/LineageOS/android_kernel_google_msm-4.9.git kernel
+          set -euo pipefail
+          KERNEL_REF="${{ inputs.kernel_ref }}"
+          KERNEL_REPO="https://github.com/LineageOS/android_kernel_google_msm-4.9.git"
+
+          git init kernel
+          git -C kernel remote add origin "$KERNEL_REPO"
+
+          if git ls-remote --exit-code --heads origin "$KERNEL_REF" >/dev/null 2>&1; then
+            git -C kernel fetch --depth=1 origin "refs/heads/$KERNEL_REF"
+            git -C kernel checkout --detach FETCH_HEAD
+          elif git ls-remote --exit-code --tags origin "$KERNEL_REF" >/dev/null 2>&1; then
+            git -C kernel fetch --depth=1 origin "refs/tags/$KERNEL_REF"
+            git -C kernel checkout --detach FETCH_HEAD
+          else
+            git -C kernel fetch --depth=500 origin lineage-22.2
+            git -C kernel checkout --detach "$KERNEL_REF"
+          fi
+
           git -C kernel rev-parse HEAD | tee kernel-commit.txt
 
       - name: Patch and resolve Docker kernel config
