@@ -39,6 +39,14 @@ jobs:
           curl -fsSL 'https://android.googlesource.com/platform/system/libufdt/+/refs/heads/android10-release/utils/src/mkdtboimg.py?format=TEXT' \
             | base64 --decode \
             | sudo tee /usr/local/bin/mkdtimg >/dev/null
+          sudo python3 - <<'PY'
+          from pathlib import Path
+          p = Path('/usr/local/bin/mkdtimg')
+          text = p.read_text()
+          old = "parser.add_argument('conf_file', nargs='?',\n                        type=argparse.FileType('rb'),"
+          new = "parser.add_argument('conf_file', nargs='?',\n                        type=argparse.FileType('r'),"
+          p.write_text(text.replace(old, new, 1))
+          PY
           sudo chmod +x /usr/local/bin/mkdtimg
           mkdtimg help cfg_create
 
