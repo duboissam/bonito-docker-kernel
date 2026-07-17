@@ -10,7 +10,7 @@ on:
       clang_ref:
         description: Android Clang prebuilt branch
         required: true
-        default: android12L-release
+        default: android-12.0.0_r0.35
 
 permissions:
   contents: read
@@ -41,10 +41,21 @@ jobs:
         run: |
           git clone --depth=1 --branch "${{ inputs.clang_ref }}" \
             https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 clang-prebuilt
-          CLANG_DIR="$(find "$GITHUB_WORKSPACE/clang-prebuilt/clang-r*/bin" -maxdepth 0 -type d | sort -V | tail -1)"
-          test -x "$CLANG_DIR/clang"
+          echo "Toolchain top-level contents:"
+          find "$GITHUB_WORKSPACE/clang-prebuilt" -maxdepth 2 -mindepth 1 -print | sort | head -200
+
+          CLANG_BIN="$(find "$GITHUB_WORKSPACE/clang-prebuilt" \
+            -path '*/bin/clang' -print | sort -V | tail -1)"
+
+          if [[ -z "$CLANG_BIN" || ! -x "$CLANG_BIN" ]]; then
+            echo "ERROR: Could not locate an executable */bin/clang in the cloned prebuilt." >&2
+            exit 1
+          fi
+
+          CLANG_DIR="$(dirname "$CLANG_BIN")"
           echo "CLANG_DIR=$CLANG_DIR" >> "$GITHUB_ENV"
-          "$CLANG_DIR/clang" --version
+          echo "Using Clang from: $CLANG_DIR"
+          "$CLANG_BIN" --version
 
       - name: Patch Docker kernel options
         run: |
