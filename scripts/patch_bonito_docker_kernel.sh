@@ -64,19 +64,21 @@ for s in LTO LTO_CLANG THINLTO; do
   fi
 done
 
-# The Android 4.9 compiler probe can reject -fstack-protector-strong with
-# some Clang/prebuilt combinations. Keep stack-canary protection enabled, but
-# select the older regular mode, which uses widely supported -fstack-protector.
+# The Android 4.9 compiler probe can reject stack-protector flags with some
+# Clang/prebuilt combinations. Docker support does not require stack canaries,
+# so prefer a buildable kernel over forcing a protector mode the toolchain
+# cannot pass.
 if symbol_exists CC_STACKPROTECTOR_STRONG; then
   scripts/config --file "$DEFCONFIG" --disable CC_STACKPROTECTOR_STRONG
   echo "disabled CONFIG_CC_STACKPROTECTOR_STRONG"
 fi
-if symbol_exists CC_STACKPROTECTOR_NONE; then
-  scripts/config --file "$DEFCONFIG" --disable CC_STACKPROTECTOR_NONE
-fi
 if symbol_exists CC_STACKPROTECTOR_REGULAR; then
-  scripts/config --file "$DEFCONFIG" --enable CC_STACKPROTECTOR_REGULAR
-  echo "enabled CONFIG_CC_STACKPROTECTOR_REGULAR"
+  scripts/config --file "$DEFCONFIG" --disable CC_STACKPROTECTOR_REGULAR
+  echo "disabled CONFIG_CC_STACKPROTECTOR_REGULAR"
+fi
+if symbol_exists CC_STACKPROTECTOR_NONE; then
+  scripts/config --file "$DEFCONFIG" --enable CC_STACKPROTECTOR_NONE
+  echo "enabled CONFIG_CC_STACKPROTECTOR_NONE"
 fi
 
 QTAGUID="net/netfilter/xt_qtaguid.c"
