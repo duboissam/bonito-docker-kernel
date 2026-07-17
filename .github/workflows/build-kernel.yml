@@ -31,7 +31,7 @@ jobs:
             bc bison build-essential ca-certificates ccache curl device-tree-compiler flex git \
             binutils-aarch64-linux-gnu binutils-arm-linux-gnueabi \
             gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi \
-            libelf-dev libssl-dev lld llvm make python3 rsync unzip xz-utils zip
+            libelf-dev libssl-dev lld llvm make mkbootimg python3 rsync unzip xz-utils zip
 
       - name: Clone LineageOS bonito kernel
         run: |
