@@ -1,0 +1,63 @@
+name: Validate bonito Docker kernel config
+
+on:
+  workflow_dispatch:
+    inputs:
+      kernel_ref:
+        description: LineageOS kernel branch, tag, or commit
+        required: true
+        default: lineage-22.2
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out workflow files
+        uses: actions/checkout@v4
+
+      - name: Install validation dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            bc bison build-essential ca-certificates curl flex git \
+            libelf-dev libssl-dev make python3
+
+      - name: Clone LineageOS bonito kernel
+        run: |
+          git clone --depth=1 --branch "${{ inputs.kernel_ref }}" \
+            https://github.com/LineageOS/android_kernel_google_msm-4.9.git kernel
+          git -C kernel rev-parse HEAD | tee kernel-commit.txt
+
+      - name: Patch and resolve Docker kernel config
+        working-directory: kernel
+        run: |
+          chmod +x "$GITHUB_WORKSPACE/scripts/patch_bonito_docker_kernel.sh"
+          "$GITHUB_WORKSPACE/scripts/patch_bonito_docker_kernel.sh" "$GITHUB_WORKSPACE/kernel"
+          bash "$GITHUB_WORKSPACE/scripts/check_bonito_docker_config.sh" out-docker/.config
+
+      - name: Check source patches landed
+        run: |
+          grep -q 'stats = &no_dev_stats;' kernel/net/netfilter/xt_qtaguid.c
+          grep -q -- '--target=arm-linux-gnueabi' kernel/arch/arm64/kernel/vdso32/Makefile
+
+      - name: Collect validation outputs
+        if: always()
+        run: |
+          mkdir -p artifacts
+          cp kernel-commit.txt artifacts/ 2>/dev/null || true
+          cp kernel/out-docker/.config artifacts/resolved-kernel-config 2>/dev/null || true
+          cp kernel/arch/arm64/configs/bonito_defconfig artifacts/bonito_defconfig 2>/dev/null || true
+          du -ah artifacts || true
+
+      - name: Upload validation artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bonito-docker-config-validation-${{ github.run_number }}
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 14

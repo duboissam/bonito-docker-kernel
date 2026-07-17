@@ -6,12 +6,20 @@ workaround, compiles the kernel, and uploads the output as a workflow artifact.
 
 ## Run it
 
+Before running the full build, run **Actions** -> **Validate bonito Docker kernel
+config**. That workflow only clones the kernel, applies the Docker config/source
+patches, resolves `.config`, and checks required Docker symbols. It does not
+compile the kernel.
+
 1. Create a new **private** GitHub repository. Do not initialise it with a README.
 2. Upload all files from this folder, preserving `.github/workflows/build-kernel.yml`.
 3. Commit the files to the default branch.
-4. Open **Actions** → **Build bonito Docker kernel** → **Run workflow**.
-5. Leave `kernel_ref` as `lineage-22.2` for the first attempt.
-6. After the run finishes, open the run and download the artifact at the bottom.
+4. Open **Actions** -> **Validate bonito Docker kernel config** -> **Run workflow**.
+5. Only if validation passes, open **Actions** -> **Build bonito Docker kernel** ->
+   **Run workflow**.
+6. Leave `kernel_ref` as `lineage-22.2` for the first attempt unless your phone
+   is running a different kernel branch or exact commit.
+7. After the run finishes, open the run and download the artifact at the bottom.
 
 The artifact should contain a kernel image, `vmlinux`, the resolved `.config`, and
 any generated modules. GitHub workflow artifacts are downloaded from the workflow
@@ -41,3 +49,21 @@ if you later need a precise commit, edit the clone step to fetch that commit.
 Open the failed red step and copy the final 100–200 lines of its log. Old Android
 4.9 kernels sometimes require a slightly different Android Clang revision or a
 small source compatibility patch.
+
+## Current phone config check
+
+The checked `bonito-current-config` is not Docker-ready yet. Required missing or
+disabled features were:
+
+- `CONFIG_IPC_NS`
+- `CONFIG_PID_NS`
+- `CONFIG_CGROUP_DEVICE`
+- `CONFIG_CGROUP_PIDS`
+- `CONFIG_BRIDGE_NETFILTER`
+- `CONFIG_POSIX_MQUEUE`
+
+Run locally with:
+
+```bash
+bash scripts/check_bonito_docker_config.sh /path/to/bonito-current-config
+```
