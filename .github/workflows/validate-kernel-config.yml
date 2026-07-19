@@ -54,6 +54,7 @@ jobs:
             echo "DEVICE_LABEL=$DEVICE_LABEL"
             echo "KERNEL_REPO=$KERNEL_REPO"
             echo "KERNEL_REF=$kernel_ref"
+            echo "DEFAULT_KERNEL_REF=$DEFAULT_KERNEL_REF"
             echo "DEFCONFIG=$DEFCONFIG"
           } >> "$GITHUB_ENV"
 
@@ -70,6 +71,9 @@ jobs:
           elif git ls-remote --exit-code --tags origin "$KERNEL_REF" >/dev/null 2>&1; then
             git -C kernel fetch --depth=1 origin "refs/tags/$KERNEL_REF"
             git -C kernel checkout --detach FETCH_HEAD
+          elif [[ "$KERNEL_REF" =~ ^[0-9a-fA-F]{7,40}$ ]]; then
+            git -C kernel fetch --depth=1000 origin "$DEFAULT_KERNEL_REF"
+            git -C kernel checkout --detach "$KERNEL_REF"
           else
             git -C kernel fetch --depth=1 origin "$KERNEL_REF"
             git -C kernel checkout --detach FETCH_HEAD
