@@ -80,8 +80,12 @@ jobs:
             git -C kernel fetch --depth=1 origin "refs/tags/$KERNEL_REF"
             git -C kernel checkout --detach FETCH_HEAD
           elif [[ "$KERNEL_REF" =~ ^[0-9a-fA-F]{7,40}$ ]]; then
-            git -C kernel fetch --depth=1000 origin "$DEFAULT_KERNEL_REF"
-            git -C kernel checkout --detach "$KERNEL_REF"
+            if git -C kernel fetch --depth=1 origin "$KERNEL_REF"; then
+              git -C kernel checkout --detach FETCH_HEAD
+            else
+              git -C kernel fetch --depth=1000 origin "$DEFAULT_KERNEL_REF"
+              git -C kernel checkout --detach "$KERNEL_REF"
+            fi
           else
             git -C kernel fetch --depth=1 origin "$KERNEL_REF"
             git -C kernel checkout --detach FETCH_HEAD
