@@ -43,12 +43,14 @@ remote_base="/data/local/tmp/${DEVICE_ID}-docker"
 remote_modules="$remote_base/vendor-modules"
 remote_log="$remote_base/modules.log"
 remote_release="$remote_base/kernel.release"
+remote_version_token="$remote_base/kernel.version-token"
 
 module_order_string="${MODULE_ORDER[*]}"
 
 adb shell "mkdir -p '$remote_modules' /data/adb/service.d /data/adb/post-fs-data.d"
 adb push "$MODULE_DIR"/. "$remote_modules"/ >/dev/null
 adb shell "uname -r > '$remote_release'"
+adb shell "printf '%s\n' '$KBUILD_HOST' > '$remote_version_token'"
 
 adb shell "cat > '$remote_base/modules.sh'" <<EOF
 #!/system/bin/sh
@@ -56,6 +58,7 @@ LOG=$remote_log
 DOCKER=$remote_modules
 TARGET=/vendor/lib/modules
 KERNEL_RELEASE_FILE=$remote_release
+KERNEL_VERSION_TOKEN_FILE=$remote_version_token
 PATH=/system/bin:/vendor/bin:/product/bin:/system/xbin
 MODULE_ORDER="$module_order_string"
 {
@@ -66,6 +69,13 @@ MODULE_ORDER="$module_order_string"
   echo "expected_kernel=\$expected_release current_kernel=\$current_release"
   if [ -n "\$expected_release" ] && [ "\$current_release" != "\$expected_release" ]; then
     echo "kernel mismatch; not binding Docker modules"
+    exit 0
+  fi
+  expected_token="\$(cat "\$KERNEL_VERSION_TOKEN_FILE" 2>/dev/null)"
+  current_version="\$(cat /proc/version 2>/dev/null)"
+  echo "expected_version_token=\$expected_token current_version=\$current_version"
+  if [ -n "\$expected_token" ] && ! echo "\$current_version" | grep -q "\$expected_token"; then
+    echo "kernel build token mismatch; not binding Docker modules"
     exit 0
   fi
   if [ -d "\$DOCKER" ] && [ -d "\$TARGET" ]; then
