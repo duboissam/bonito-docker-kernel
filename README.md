@@ -1,30 +1,39 @@
-# Pixel 3 XL Docker kernel builder
+# Pixel Docker kernel builder
 
-This GitHub Actions project clones the LineageOS Pixel 3/3 XL Linux 4.9 kernel
-for the `crosshatch`/`bluecross` family, enables Docker/container kernel
-options, attempts the Android `xt_qtaguid` workaround when that source file is
-present, compiles the kernel, and uploads the output as a workflow artifact.
+This GitHub Actions project clones a configured Pixel Linux 4.9 kernel, enables
+Docker/container kernel options, attempts the Android `xt_qtaguid` workaround
+when that source file is present, compiles the kernel, and uploads the output as
+a workflow artifact.
+
+Supported device configs:
+
+| Device config | Phone | Android codename | Defconfig |
+| --- | --- | --- | --- |
+| `crosshatch` | Pixel 3 XL | `crosshatch` | `b1c1_defconfig` |
+| `sargo` | Pixel 3a | `sargo` | `bonito_defconfig` |
+| `bonito` | Pixel 3a XL | `bonito` | `bonito_defconfig` |
 
 ## Run it
 
-Before running the full build, run **Actions** -> **Validate crosshatch Docker
-kernel config**. That workflow only clones the kernel, applies the Docker config/source
+Before running the full build, run **Actions** -> **Validate Pixel Docker
+kernel config** and select the target `device`. That workflow only clones the kernel, applies the Docker config/source
 patches, resolves `.config`, and checks required Docker symbols. It does not
 compile the kernel.
 
 1. Create a new **private** GitHub repository. Do not initialise it with a README.
 2. Upload all files from this folder, preserving `.github/workflows/build-kernel.yml`.
 3. Commit the files to the default branch.
-4. Open **Actions** -> **Validate crosshatch Docker kernel config** -> **Run workflow**.
-5. Only if validation passes, open **Actions** -> **Build crosshatch Docker kernel** ->
-   **Run workflow**.
-6. Leave `kernel_ref` as `lineage-22.2` for the first attempt unless your phone
+4. Open **Actions** -> **Validate Pixel Docker kernel config** -> **Run workflow**.
+5. Select `crosshatch`, `sargo`, or `bonito`.
+6. Only if validation passes, open **Actions** -> **Build Pixel Docker kernel** ->
+   **Run workflow** with the same `device`.
+7. Leave `kernel_ref` blank for the first attempt unless your phone
    is running a different kernel branch or exact commit.
-7. After the run finishes, open the run and download the artifact at the bottom.
+8. After the run finishes, open the run and download the artifact at the bottom.
 
 The artifact should contain a kernel image, `vmlinux`, the resolved `.config`,
 the raw module archive, and a flattened `vendor-modules.tar.gz` package for the
-phone's `/vendor/lib/modules` directory. GitHub workflow artifacts are
+runtime module installer. GitHub workflow artifacts are
 downloaded from the workflow run page.
 
 ## Important
@@ -41,7 +50,7 @@ Do not permanently flash it until temporary booting and ADB both work.
 
 ## Vendor modules
 
-Crosshatch uses loadable vendor modules for Wi-Fi and audio. Enabling Docker
+These Pixels use loadable vendor modules for Wi-Fi and audio. Enabling Docker
 kernel options changes the module version CRCs, so the stock
 `/vendor/lib/modules/*.ko` files can have the same visible `vermagic` string but
 still fail with errors like:
@@ -55,14 +64,48 @@ the boot image:
 
 ```bash
 tar -xzf vendor-modules.tar.gz
-bash scripts/install_crosshatch_vendor_modules.sh vendor-modules
+bash scripts/install_runtime_fix.sh crosshatch vendor-modules
 adb reboot
 ```
 
-The install script backs up the existing phone modules under
-`/data/local/tmp/vendor-modules-backup-*` before replacing files. If `adb remount`
-fails, the phone may need verity disabled and a reboot before `/vendor` can be
-updated.
+For Pixel 3a:
+
+```bash
+tar -xzf vendor-modules.tar.gz
+bash scripts/install_runtime_fix.sh sargo vendor-modules
+adb reboot
+```
+
+For Pixel 3a XL:
+
+```bash
+tar -xzf vendor-modules.tar.gz
+bash scripts/install_runtime_fix.sh bonito vendor-modules
+adb reboot
+```
+
+The runtime installer stages the matching modules under
+`/data/local/tmp/<device>-docker/vendor-modules`, bind-mounts them over
+`/vendor/lib/modules`, and installs boot scripts that recover Android's media
+routes after the audio modules are loaded. This avoids writing the very full
+vendor partition directly.
+
+After reboot, verify media routes before testing audio:
+
+```bash
+adb shell dumpsys media_router | grep ROUTE_ID_BUILTIN_SPEAKER
+```
+
+If the route remains `DEVICE_ROUTE` with `<provider info has no routes>`, do not
+debug the audio app. The kernel audio stack and Android MediaRouter are still
+out of order.
+
+The installer refuses to run if the connected phone's Android codename does not
+match the selected device config. Do not flash or install crosshatch artifacts
+on sargo/bonito, or sargo/bonito artifacts on crosshatch.
+
+`scripts/install_crosshatch_vendor_modules.sh` is kept for direct crosshatch
+`/vendor` installs, but the runtime installer is the safer default.
 
 ## Matching your installed kernel
 
@@ -92,5 +135,5 @@ disabled features were:
 Run locally with:
 
 ```bash
-bash scripts/check_docker_kernel_config.sh /path/to/crosshatch-current-config
+bash scripts/check_docker_kernel_config.sh /path/to/current-config
 ```

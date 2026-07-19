@@ -1,12 +1,21 @@
-name: Validate crosshatch Docker kernel config
+name: Validate Pixel Docker kernel config
 
 on:
   workflow_dispatch:
     inputs:
+      device:
+        description: Device config to validate
+        required: true
+        default: crosshatch
+        type: choice
+        options:
+          - crosshatch
+          - sargo
+          - bonito
       kernel_ref:
         description: LineageOS kernel branch, tag, or commit
-        required: true
-        default: lineage-22.2
+        required: false
+        default: ""
 permissions:
   contents: read
 
@@ -31,11 +40,26 @@ jobs:
           set -euo pipefail
           scripts/install_mkdtimg.sh /usr/local/bin/mkdtimg
 
-      - name: Clone LineageOS crosshatch kernel
+      - name: Load device config
         run: |
           set -euo pipefail
-          KERNEL_REF="${{ inputs.kernel_ref }}"
-          KERNEL_REPO="https://github.com/LineageOS/android_kernel_google_msm-4.9.git"
+          source scripts/load_device_config.sh
+          load_device_config "${{ inputs.device }}"
+          kernel_ref="${{ inputs.kernel_ref }}"
+          if [[ -z "$kernel_ref" ]]; then
+            kernel_ref="$DEFAULT_KERNEL_REF"
+          fi
+          {
+            echo "DEVICE_ID=$DEVICE_ID"
+            echo "DEVICE_LABEL=$DEVICE_LABEL"
+            echo "KERNEL_REPO=$KERNEL_REPO"
+            echo "KERNEL_REF=$kernel_ref"
+            echo "DEFCONFIG=$DEFCONFIG"
+          } >> "$GITHUB_ENV"
+
+      - name: Clone device kernel
+        run: |
+          set -euo pipefail
 
           git init kernel
           git -C kernel remote add origin "$KERNEL_REPO"
@@ -56,8 +80,8 @@ jobs:
       - name: Patch and resolve Docker kernel config
         working-directory: kernel
         run: |
-          chmod +x "$GITHUB_WORKSPACE/scripts/patch_crosshatch_docker_kernel.sh"
-          "$GITHUB_WORKSPACE/scripts/patch_crosshatch_docker_kernel.sh" "$GITHUB_WORKSPACE/kernel"
+          chmod +x "$GITHUB_WORKSPACE/scripts/patch_docker_kernel.sh"
+          "$GITHUB_WORKSPACE/scripts/patch_docker_kernel.sh" "$DEVICE_ID" "$GITHUB_WORKSPACE/kernel"
           bash "$GITHUB_WORKSPACE/scripts/check_docker_kernel_config.sh" out-docker/.config
 
       - name: Check source patches landed
@@ -75,14 +99,14 @@ jobs:
           mkdir -p artifacts
           cp kernel-commit.txt artifacts/ 2>/dev/null || true
           cp kernel/out-docker/.config artifacts/resolved-kernel-config 2>/dev/null || true
-          cp kernel/arch/arm64/configs/b1c1_defconfig artifacts/b1c1_defconfig 2>/dev/null || true
+          cp "kernel/arch/arm64/configs/$DEFCONFIG" "artifacts/$DEFCONFIG" 2>/dev/null || true
           du -ah artifacts || true
 
       - name: Upload validation artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: crosshatch-docker-config-validation-${{ github.run_number }}
+          name: ${{ env.DEVICE_ID }}-docker-config-validation-${{ github.run_number }}
           path: artifacts/
           if-no-files-found: warn
           retention-days: 14

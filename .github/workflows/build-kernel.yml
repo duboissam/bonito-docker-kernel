@@ -1,12 +1,21 @@
-name: Build crosshatch Docker kernel
+name: Build Pixel Docker kernel
 
 on:
   workflow_dispatch:
     inputs:
+      device:
+        description: Device config to build
+        required: true
+        default: crosshatch
+        type: choice
+        options:
+          - crosshatch
+          - sargo
+          - bonito
       kernel_ref:
         description: LineageOS kernel branch, tag, or commit
-        required: true
-        default: lineage-22.2
+        required: false
+        default: ""
       clang_ref:
         description: Android Clang prebuilt branch
         required: true
@@ -38,11 +47,27 @@ jobs:
           set -euo pipefail
           scripts/install_mkdtimg.sh /usr/local/bin/mkdtimg
 
-      - name: Clone LineageOS crosshatch kernel
+      - name: Load device config
         run: |
           set -euo pipefail
-          KERNEL_REF="${{ inputs.kernel_ref }}"
-          KERNEL_REPO="https://github.com/LineageOS/android_kernel_google_msm-4.9.git"
+          source scripts/load_device_config.sh
+          load_device_config "${{ inputs.device }}"
+          kernel_ref="${{ inputs.kernel_ref }}"
+          if [[ -z "$kernel_ref" ]]; then
+            kernel_ref="$DEFAULT_KERNEL_REF"
+          fi
+          {
+            echo "DEVICE_ID=$DEVICE_ID"
+            echo "DEVICE_LABEL=$DEVICE_LABEL"
+            echo "KERNEL_REPO=$KERNEL_REPO"
+            echo "KERNEL_REF=$kernel_ref"
+            echo "DEFCONFIG=$DEFCONFIG"
+            echo "KBUILD_HOST=$KBUILD_HOST"
+          } >> "$GITHUB_ENV"
+
+      - name: Clone device kernel
+        run: |
+          set -euo pipefail
 
           git init kernel
           git -C kernel remote add origin "$KERNEL_REPO"
@@ -82,8 +107,8 @@ jobs:
 
       - name: Patch Docker kernel options
         run: |
-          chmod +x scripts/patch_crosshatch_docker_kernel.sh
-          scripts/patch_crosshatch_docker_kernel.sh "$GITHUB_WORKSPACE/kernel"
+          chmod +x scripts/patch_docker_kernel.sh
+          scripts/patch_docker_kernel.sh "$DEVICE_ID" "$GITHUB_WORKSPACE/kernel"
 
       - name: Build kernel
         working-directory: kernel
@@ -103,11 +128,11 @@ jobs:
           CROSS_COMPILE_ARM32: arm-linux-gnueabi-
           CROSS_COMPILE_COMPAT: arm-linux-gnueabi-
           KBUILD_BUILD_USER: github-actions
-          KBUILD_BUILD_HOST: crosshatch-docker
+          KBUILD_BUILD_HOST: ${{ env.KBUILD_HOST }}
         run: |
           export PATH="$CLANG_DIR:$PATH"
           export KBUILD_BUILD_TIMESTAMP="$(date -u -d @${SOURCE_DATE_EPOCH:-$(date +%s)} '+%a %b %d %T UTC %Y')"
-          make O=out-docker ARCH=arm64 b1c1_defconfig
+          make O=out-docker ARCH=arm64 "$DEFCONFIG"
           make O=out-docker ARCH=arm64 olddefconfig
           make O=out-docker ARCH=arm64 -j"$(nproc)" \
             CC=clang LD=aarch64-linux-gnu-ld.bfd AR=llvm-ar NM=llvm-nm \
@@ -123,14 +148,14 @@ jobs:
           mkdir -p artifacts
           cp kernel-commit.txt artifacts/ 2>/dev/null || true
           cp kernel/out-docker/.config artifacts/resolved-kernel-config 2>/dev/null || true
-          cp kernel/arch/arm64/configs/b1c1_defconfig artifacts/b1c1_defconfig 2>/dev/null || true
+          cp "kernel/arch/arm64/configs/$DEFCONFIG" "artifacts/$DEFCONFIG" 2>/dev/null || true
           cp kernel/out-docker/arch/arm64/boot/Image.lz4-dtb artifacts/ 2>/dev/null || true
           cp kernel/out-docker/arch/arm64/boot/Image.gz-dtb artifacts/ 2>/dev/null || true
           cp kernel/out-docker/arch/arm64/boot/Image artifacts/ 2>/dev/null || true
           cp kernel/out-docker/vmlinux artifacts/ 2>/dev/null || true
           if [[ -d kernel/out-docker ]]; then
-            chmod +x scripts/package_crosshatch_vendor_modules.sh
-            scripts/package_crosshatch_vendor_modules.sh kernel/out-docker artifacts/vendor-modules
+            chmod +x scripts/package_vendor_modules.sh
+            scripts/package_vendor_modules.sh "$DEVICE_ID" kernel/out-docker artifacts/vendor-modules
             tar -czf artifacts/vendor-modules.tar.gz -C artifacts vendor-modules
           fi
           find kernel/out-docker -name '*.ko' -print0 2>/dev/null | \
@@ -141,7 +166,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: crosshatch-docker-kernel-${{ github.run_number }}
+          name: ${{ env.DEVICE_ID }}-docker-kernel-${{ github.run_number }}
           path: artifacts/
           if-no-files-found: warn
           retention-days: 14
