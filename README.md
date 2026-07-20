@@ -20,16 +20,14 @@ kernel config** and select the target `device`. That workflow only clones the ke
 patches, resolves `.config`, and checks required Docker symbols. It does not
 compile the kernel.
 
-1. Create a new **private** GitHub repository. Do not initialise it with a README.
-2. Upload all files from this folder, preserving `.github/workflows/build-kernel.yml`.
-3. Commit the files to the default branch.
-4. Open **Actions** -> **Validate Pixel Docker kernel config** -> **Run workflow**.
-5. Select `crosshatch`, `sargo`, or `bonito`.
-6. Only if validation passes, open **Actions** -> **Build Pixel Docker kernel** ->
+
+1. Open **Actions** -> **Validate Pixel Docker kernel config** -> **Run workflow**.
+2. Select `crosshatch`, `sargo`, or `bonito`.
+3. Only if validation passes, open **Actions** -> **Build Pixel Docker kernel** ->
    **Run workflow** with the same `device`.
-7. Leave `kernel_ref` blank for the first attempt unless your phone
+4. Leave `kernel_ref` blank for the first attempt unless your phone
    is running a different kernel branch or exact commit.
-8. After the run finishes, open the run and download the artifact at the bottom.
+5. After the run finishes, open the run and download the artifact at the bottom.
 
 The artifact should contain a kernel image, `vmlinux`, the resolved `.config`,
 the raw module archive, and a flattened `vendor-modules.tar.gz` package for the
